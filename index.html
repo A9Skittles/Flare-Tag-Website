@@ -174,6 +174,7 @@ h1 {
     <span onclick="showPage('rules')">Rules</span>
     <span onclick="showPage('staff')">Staff</span>
     <span onclick="showPage('links')">Links</span>
+    <span onclick="showPage('contact')">Contact</span>
 </div>
 
 <!-- HOME -->
@@ -203,7 +204,7 @@ h1 {
     </div>
 </div>
 
-<!-- RULES (ADDED ONLY) -->
+<!-- RULES -->
 <div id="rules" class="page" align="center">
     <h1>RULES</h1>
 
@@ -279,6 +280,28 @@ h1 {
     <a class="button" href="https://www.youtube.com" target="_blank">Youtube</a><br>
     <a class="button" href="https://www.tiktok.com/@soloristag?_r=1&_t=ZT-92AyrIJuAlK" target="_blank">  Tiktok</a>
 </div>
+<!-- CONTACT -->
+<div id="contact" class="page" align="center">
+    <h1>CONTACT US</h1>
+
+    <div class="apk-card" style="max-width:420px;">
+        <input id="cname" placeholder="Your name" style="width:100%;padding:12px;margin-bottom:10px;border-radius:10px;border:none;">
+        <input id="cemail" placeholder="Your email" style="width:100%;padding:12px;margin-bottom:10px;border-radius:10px;border:none;">
+        <input id="csubject" placeholder="Subject" style="width:100%;padding:12px;margin-bottom:10px;border-radius:10px;border:none;">
+        <textarea id="cmessage" placeholder="Your message" style="width:100%;padding:12px;height:120px;border-radius:10px;border:none;"></textarea>
+
+        <div class="button" onclick="sendContact()">Send Message</div>
+
+<!-- SEND MESSAGES -->
+        <div id="contactStatus" style="
+            margin-top:12px;
+            font-size:14px;
+            color:#ffb347;
+            min-height:18px;
+    "></div>
+    </div>
+</div>
+
 
 <div class="footer" align="center">
     © 2025 Flare Tag — Owned by itsdakozy
@@ -300,8 +323,85 @@ for (let i = 0; i < 40; i++) {
     e.style.animationDelay = Math.random() * 5 + 's';
     emberBox.appendChild(e);
 }
+const COOLDOWN_TIME = 5 * 60 * 1000; // 5 minutes
+const WEBHOOK_URL = "https://discord.com/api/webhooks/1451722217217069058/-W96KjelusNnmXUzHPwcLsL2D0Xif0nMHR9d5tgK5omJRGxG8ArK8evmBom68aBaFw54";
+
+function setStatus(text, good = false) {
+    const el = document.getElementById("contactStatus");
+    el.textContent = text;
+    el.style.color = good ? "#6cff6c" : "#ff6c6c";
+}
+
+function sendContact() {
+    const lastSent = localStorage.getItem("lastContactSent");
+    const now = Date.now();
+
+    if (lastSent && now - lastSent < COOLDOWN_TIME) {
+        const remaining = Math.ceil((COOLDOWN_TIME - (now - lastSent)) / 1000);
+        setStatus("Please wait " + remaining + " seconds before sending another message.");
+        return;
+    }
+
+    const name = document.getElementById("cname").value.trim();
+    const email = document.getElementById("cemail").value.trim();
+    const subject = document.getElementById("csubject").value.trim();
+    const message = document.getElementById("cmessage").value.trim();
+
+    const badWords = ["fuck","shit","bitch","asshole","nigger","faggot"];
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        setStatus("Invalid email address");
+        return;
+    }
+
+    if (message.length < 5) {
+        setStatus("Message is too short");
+        return;
+    }
+
+    for (let w of badWords) {
+        if (message.toLowerCase().includes(w)) {
+            setStatus("Please remove inappropriate language");
+            return;
+        }
+    }
+
+    setStatus("Sending message...", true);
+
+    fetch(WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            embeds: [{
+                title: "📩 New Contact Message",
+                color: 16744192,
+                fields: [
+                    { name: "Name", value: name || "N/A" },
+                    { name: "Email", value: email },
+                    { name: "Subject", value: subject || "N/A" },
+                    { name: "Message", value: message }
+                ],
+                footer: { text: "Flare Tag Website" },
+                timestamp: new Date()
+            }]
+        })
+    })
+    .then(() => {
+        localStorage.setItem("lastContactSent", Date.now());
+        setStatus("Message sent successfully!", true);
+
+        document.getElementById("cname").value = "";
+        document.getElementById("cemail").value = "";
+        document.getElementById("csubject").value = "";
+        document.getElementById("cmessage").value = "";
+    })
+    .catch(() => {
+        setStatus("Failed to send message. Try again later.");
+    });
+}
 </script>
+}
 
 </body>
 </html>
-
